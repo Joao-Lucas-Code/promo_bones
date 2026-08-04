@@ -180,6 +180,21 @@ def toggle_site(site_id):
     finally:
         db.close()
 
+def _parse_brazilian_price(text: str) -> float | None:
+    """Converte texto de preço brasileiro (R$ 1.234,56 ou 1234.56) para float."""
+    text = text.replace("R$", "").strip()
+    if not text:
+        return None
+    # Se tem vírgula, assume formato brasileiro: vírgula é decimal, ponto é milhar
+    if "," in text:
+        text = text.replace(".", "").replace(",", ".")
+    # Se não tem vírgula, ponto é decimal (ex: 139.00)
+    try:
+        return float(text)
+    except ValueError:
+        return None
+
+
 # === PRODUCTS ===
 @app.route("/products")
 def products_list():
@@ -188,6 +203,10 @@ def products_list():
         search = request.args.get("search")
         site_id = request.args.get("site_id", type=int)
         min_discount = request.args.get("min_discount", type=float)
+        min_price = request.args.get("min_price", type=float)
+        max_price = request.args.get("max_price", type=float)
+        min_original_price = request.args.get("min_original_price", type=float)
+        max_original_price = request.args.get("max_original_price", type=float)
 
         query = db.query(Product).join(Site)
         if search:
@@ -196,6 +215,14 @@ def products_list():
             query = query.filter(Product.site_id == site_id)
         if min_discount:
             query = query.filter(Product.discount_percent >= min_discount)
+        if min_price is not None:
+            query = query.filter(Product.current_price >= min_price)
+        if max_price is not None:
+            query = query.filter(Product.current_price <= max_price)
+        if min_original_price is not None:
+            query = query.filter(Product.original_price >= min_original_price)
+        if max_original_price is not None:
+            query = query.filter(Product.original_price <= max_original_price)
 
         products = query.order_by(Product.updated_at.desc()).limit(100).all()
         sites = db.query(Site).all()
@@ -206,6 +233,10 @@ def products_list():
             search=search,
             site_id=site_id,
             min_discount=min_discount,
+            min_price=min_price,
+            max_price=max_price,
+            min_original_price=min_original_price,
+            max_original_price=max_original_price,
         )
     finally:
         db.close()
@@ -221,8 +252,7 @@ def edit_marketplace_reference(product_id):
 
         if request.method == "POST":
             product.marketplace_url = request.form.get("marketplace_url", "").strip() or None
-            raw_price = request.form.get("marketplace_price", "").strip().replace("R$", "").replace(".", "").replace(",", ".")
-            product.marketplace_price = float(raw_price) if raw_price else None
+            product.marketplace_price = _parse_brazilian_price(request.form.get("marketplace_price", ""))
             db.commit()
             return redirect("/products")
 
@@ -240,8 +270,7 @@ def api_update_marketplace_reference(product_id):
             return jsonify({"success": False, "error": "Produto não encontrado"}), 404
 
         product.marketplace_url = request.form.get("marketplace_url", "").strip() or None
-        raw_price = request.form.get("marketplace_price", "").strip().replace("R$", "").replace(".", "").replace(",", ".")
-        product.marketplace_price = float(raw_price) if raw_price else None
+        product.marketplace_price = _parse_brazilian_price(request.form.get("marketplace_price", ""))
         db.commit()
         return jsonify({
             "success": True,

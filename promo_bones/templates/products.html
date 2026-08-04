@@ -22,12 +22,29 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Desconto mínimo %</label>
-                <input type="number" name="min_discount" class="form-control" placeholder="Ex: 20" value="{{ min_discount or '' }}">
+                <input type="number" step="0.01" name="min_discount" class="form-control" placeholder="Ex: 20" value="{{ min_discount or '' }}">
             </div>
             <div class="col-md-2">
                 <button type="submit" class="btn btn-accent w-100">
                     <i class="bi bi-search"></i> Filtrar
                 </button>
+            </div>
+
+            <div class="col-md-3">
+                <label class="form-label">Preço atual mín.</label>
+                <input type="number" step="0.01" name="min_price" class="form-control" placeholder="Ex: 100" value="{{ min_price or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Preço atual máx.</label>
+                <input type="number" step="0.01" name="max_price" class="form-control" placeholder="Ex: 200" value="{{ max_price or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Preço original mín.</label>
+                <input type="number" step="0.01" name="min_original_price" class="form-control" placeholder="Ex: 200" value="{{ min_original_price or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Preço original máx.</label>
+                <input type="number" step="0.01" name="max_original_price" class="form-control" placeholder="Ex: 400" value="{{ max_original_price or '' }}">
             </div>
         </form>
     </div>
