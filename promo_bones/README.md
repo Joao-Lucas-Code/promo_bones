@@ -69,6 +69,21 @@ python main.py
 
 O painel estará disponível em: **http://localhost:5000**
 
+## 🌐 Deploy no Render
+
+Este projeto pode ser deployado no [Render](https://render.com) usando o `render.yaml` da raiz do repositório.
+
+1. Suba o código no GitHub.
+2. No Render, crie um novo **Blueprint** e conecte o repositório.
+3. Configure as variáveis de ambiente no dashboard:
+   - `TELEGRAM_BOT_TOKEN`
+   - `TELEGRAM_GROUP_ID`
+   - `ML_AFFILIATE_TAG` (opcional)
+   - `AMAZON_AFFILIATE_TAG` (opcional)
+4. Faça o deploy.
+
+> No plano gratuito, o banco SQLite é reiniciado quando o serviço "dorme". Use PostgreSQL se precisar de persistência garantida.
+
 ## 🖥️ Funcionalidades do Painel
 
 | Página | O que faz |

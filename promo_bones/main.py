@@ -1,5 +1,6 @@
 """Flask app - Painel Admin Promo Bonés."""
 import asyncio
+import os
 import requests as req
 from datetime import datetime
 from functools import wraps
@@ -14,7 +15,7 @@ from message_generator import create_promo_message, MessageGenerator
 from telegram_bot import send_promo_message_sync, check_bot_config_sync
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = 'promo-bones-secret-key-change-later'
+app.secret_key = os.getenv("FLASK_SECRET_KEY", "promo-bones-secret-key-change-later")
 
 # Helper to get DB session per request
 def get_db_session():
