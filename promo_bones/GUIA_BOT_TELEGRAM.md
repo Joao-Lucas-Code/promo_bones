@@ -8,7 +8,7 @@
 
 ### 2. Crie o bot
 - Envie o comando: `/newbot`
-- Digite um nome para o bot (ex: `Promo Bones`)
+- Digite um nome para o bot (ex: `Promo Bonés`)
 - Digite um username único (deve terminar em `bot`, ex: `promo_bones_bot`)
 
 ### 3. Copie o TOKEN
@@ -23,7 +23,7 @@ Use this token to access the HTTP API:
 
 - **Copie o token** (é a parte depois de "Use this token...")
 
-### 4. Configure no Promo Bones
+### 4. Configure no Promo Bonés
 Crie o arquivo `.env` na pasta `promo_bones/` (copie de `.env.example`):
 
 ```bash
@@ -49,7 +49,7 @@ TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
   ```
 
 ### 6. Teste
-- Reinicie o servidor do Promo Bones
+- Reinicie o servidor do Promo Bonés
 - Acesse o painel em http://localhost:5000
 - No Dashboard, clique em **"Testar Envio"**
 - Você deve receber uma mensagem de teste no grupo!

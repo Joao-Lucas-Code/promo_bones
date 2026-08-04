@@ -1,4 +1,4 @@
-"""Configurações do projeto Promo Bones."""
+"""Configurações do projeto Promo Bonés."""
 import os
 
 try:
@@ -64,5 +64,5 @@ AFFILIATE_CONFIG = {
 SCRAPER_INTERVAL_MINUTES = int(os.getenv("SCRAPER_INTERVAL", "60"))
 
 # === APP ===
-APP_TITLE = "Promo Bones - Painel Admin"
+APP_TITLE = "Promo Bonés - Painel Admin"
 APP_VERSION = "1.0.0"

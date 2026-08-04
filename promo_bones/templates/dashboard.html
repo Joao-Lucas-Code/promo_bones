@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - Promo Bones{% endblock %}
+{% block title %}Dashboard - Promo Bonés{% endblock %}
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="fw-bold">Dashboard</h2>
@@ -235,7 +235,7 @@ function runScraper(site) {
 }
 
 function testBot() {
-    fetch('/api/bot/test-message', {method: 'POST', body: new URLSearchParams({text: '🧢 Teste do Promo Bones!'})})
+    fetch('/api/bot/test-message', {method: 'POST', body: new URLSearchParams({text: '🧢 Teste do Promo Bonés!'})})
         .then(r => r.json())
         .then(data => {
             if (data.ok) alert('Mensagem de teste enviada com sucesso!');

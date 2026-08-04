@@ -1,4 +1,4 @@
-# 🚀 GUIR PRÁTICO — Testar o Promo Bones do Zero
+# 🚀 GUIA PRÁTICO — Testar o Promo Bonés do Zero
 
 ## Etapa 1: Criar o Bot no Telegram (2 minutos)
 
@@ -15,7 +15,7 @@ Envie esses comandos em sequência no chat do BotFather:
 
 Ele vai perguntar o **nome** do bot (o que aparece pros usuários):
 ```
-Promo Bones
+Promo Bonés
 ```
 
 Depois o **username** (deve terminar em `bot`, único no mundo):
@@ -39,7 +39,7 @@ Guarde ele num bloco de notas, você vai usar já já.
 
 ---
 
-## Etapa 2: Configurar o Promo Bones
+## Etapa 2: Configurar o Promo Bonés
 
 ### Passo 2.1 — Abra o arquivo de configuração
 Vá na pasta do projeto e abra o arquivo:
@@ -94,7 +94,7 @@ Abra o Chrome e digite:
 http://localhost:8000
 ```
 
-Você vai ver o Dashboard do Promo Bones.
+Você vai ver o Dashboard do Promo Bonés.
 
 ---
 

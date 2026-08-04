@@ -1,4 +1,4 @@
-"""Flask app - Painel Admin Promo Bones."""
+"""Flask app - Painel Admin Promo Bonés."""
 import asyncio
 import requests as req
 from datetime import datetime
@@ -307,7 +307,7 @@ def api_bot_status():
 
 @app.route("/api/bot/test-message", methods=["POST"])
 def api_test_message():
-    text = request.form.get("text", "🧢 Teste do bot Promo Bones!")
+    text = request.form.get("text", "🧢 Teste do bot Promo Bonés!")
     from telegram_bot import send_text_sync
     result = send_text_sync(text)
     return jsonify(result)

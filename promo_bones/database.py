@@ -1,4 +1,4 @@
-"""Database models and connection for Promo Bones."""
+"""Database models and connection for Promo Bonés."""
 from datetime import datetime
 from sqlalchemy import (
     create_engine, Column, Integer, String, Float, Boolean,
