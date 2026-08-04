@@ -210,6 +210,50 @@ def products_list():
     finally:
         db.close()
 
+@app.route("/products/<int:product_id>/marketplace", methods=["GET", "POST"])
+def edit_marketplace_reference(product_id):
+    """Permite cadastrar/editar o preço de referência do Mercado Livre."""
+    db = next(get_db())
+    try:
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            return "Produto não encontrado", 404
+
+        if request.method == "POST":
+            product.marketplace_url = request.form.get("marketplace_url", "").strip() or None
+            raw_price = request.form.get("marketplace_price", "").strip().replace("R$", "").replace(".", "").replace(",", ".")
+            product.marketplace_price = float(raw_price) if raw_price else None
+            db.commit()
+            return redirect("/products")
+
+        return render_template("marketplace_form.html", product=product)
+    finally:
+        db.close()
+
+@app.route("/api/products/<int:product_id>/marketplace", methods=["POST"])
+def api_update_marketplace_reference(product_id):
+    """API JSON para atualizar preço de referência do marketplace."""
+    db = next(get_db())
+    try:
+        product = db.query(Product).filter(Product.id == product_id).first()
+        if not product:
+            return jsonify({"success": False, "error": "Produto não encontrado"}), 404
+
+        product.marketplace_url = request.form.get("marketplace_url", "").strip() or None
+        raw_price = request.form.get("marketplace_price", "").strip().replace("R$", "").replace(".", "").replace(",", ".")
+        product.marketplace_price = float(raw_price) if raw_price else None
+        db.commit()
+        return jsonify({
+            "success": True,
+            "marketplace_price": product.marketplace_price,
+            "marketplace_url": product.marketplace_url,
+        })
+    except ValueError:
+        db.rollback()
+        return jsonify({"success": False, "error": "Preço inválido"}), 400
+    finally:
+        db.close()
+
 # === COUPONS ===
 @app.route("/coupons")
 def coupons_list():

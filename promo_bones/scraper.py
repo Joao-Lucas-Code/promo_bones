@@ -1,15 +1,40 @@
 """Web scraper para sites de bonés."""
+import os
 import re
-import requests
 from datetime import datetime
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+from bs4 import BeautifulSoup
 
 from .config import USER_AGENT, REQUEST_TIMEOUT, SITES
 from .database import SessionLocal, Product, PriceHistory, Site, ScraperLog
 
+# Tenta usar curl_cffi (melhor contra bloqueios de TLS/bot); fallback para requests
+try:
+    from curl_cffi import requests as curl_requests
+    CURL_CFFI_AVAILABLE = True
+except Exception:  # pragma: no cover
+    import requests as curl_requests
+    CURL_CFFI_AVAILABLE = False
 
-HEADERS = {"User-Agent": USER_AGENT}
+import requests
+
+
+PROXY_URL = os.getenv("SCRAPER_PROXY_URL", "")
+
+
+HEADERS = {
+    "User-Agent": USER_AGENT,
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+    "Accept-Language": "pt-BR,pt;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Encoding": "gzip, deflate, br",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Cache-Control": "max-age=0",
+}
 
 
 class BaseScraper:
@@ -18,17 +43,45 @@ class BaseScraper:
     def __init__(self, site_slug: str):
         self.site_slug = site_slug
         self.site_config = SITES.get(site_slug, {})
-        self.session = requests.Session()
-        self.session.headers.update(HEADERS)
+        self.last_response_text = ""
+        self.last_url = ""
+        self._build_session()
+
+    def _build_session(self):
+        """Monta a sessão HTTP, preferindo curl_cffi quando disponível."""
+        proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else None
+        if CURL_CFFI_AVAILABLE:
+            self.session = curl_requests.Session()
+            self.session.impersonate = "chrome131"
+        else:
+            self.session = requests.Session()
+            self.session.headers.update(HEADERS)
+        self.session.proxies = proxies
 
     def fetch(self, url: str) -> BeautifulSoup | None:
         try:
-            resp = self.session.get(url, timeout=REQUEST_TIMEOUT)
+            if CURL_CFFI_AVAILABLE:
+                resp = self.session.get(url, timeout=REQUEST_TIMEOUT)
+            else:
+                resp = self.session.get(url, timeout=REQUEST_TIMEOUT)
             resp.raise_for_status()
+            self.last_url = resp.url
+            self.last_response_text = resp.text
             return BeautifulSoup(resp.text, "html.parser")
         except Exception as e:
             print(f"[ERRO] Falha ao buscar {url}: {e}")
             return None
+
+    def is_blocked(self) -> bool:
+        """Detecta páginas de bloqueio/verificação do Mercado Livre."""
+        text = self.last_response_text.lower()
+        return any(marker in text for marker in [
+            "suspicious-traffic",
+            "account-verification",
+            "micro-landing-container",
+            "para continuar, acesse",
+            "sua conta",
+        ])
 
     def parse_products(self, soup: BeautifulSoup) -> list[dict]:
         raise NotImplementedError
@@ -191,16 +244,35 @@ class SoleilScraper(DustCompanyScraper):
 
 
 class MercadoLivreScraper(BaseScraper):
-    """Scraper para Mercado Livre."""
+    """Scraper para Mercado Livre.
+
+    Atenção: o Mercado Livre costuma bloquear requisições vindas de
+    datacenters/cloud (página de verificação de conta ou micro-landing).
+    Quando isso acontece, o scraper retorna um erro informativo e o painel
+    pode usar o preço de referência do marketplace cadastrado manualmente.
+    """
 
     def parse_products(self, soup: BeautifulSoup) -> list[dict]:
         products = []
-        items = soup.select(".ui-search-result, .ui-search-layout__item, .poly-card")
+        # Selectores usados nas listagens do ML (clássicos e novos "poly")
+        items = soup.select(
+            ".ui-search-result, .ui-search-layout__item, .poly-card, "
+            ".andes-card--default, [data-testid='product-card']"
+        )
 
         for item in items[:15]:
-            name_el = item.select_one(".poly-component__title, .ui-search-item__title")
-            price_el = item.select_one(".poly-price__current, .andes-money-amount__fraction")
-            old_price_el = item.select_one(".poly-price__old, .andes-money-amount--previous")
+            name_el = item.select_one(
+                ".poly-component__title, .ui-search-item__title, "
+                ".ui-search-link__title-class, a[title]"
+            )
+            price_el = item.select_one(
+                ".poly-price__current, .andes-money-amount__fraction, "
+                ".price-tag-fraction, .ui-search-price__part"
+            )
+            old_price_el = item.select_one(
+                ".poly-price__old, .andes-money-amount--previous, "
+                ".price-tag-amount--previous, .ui-search-price__part--small"
+            )
             img_el = item.select_one("img")
             link_el = item.select_one("a[href]")
 
@@ -246,7 +318,28 @@ class MercadoLivreScraper(BaseScraper):
         soup = self.fetch(url)
         if not soup:
             return {"success": False, "products": [], "error": "Falha ao carregar página"}
+
+        if self.is_blocked():
+            return {
+                "success": False,
+                "products": [],
+                "error": (
+                    "Mercado Livre bloqueou a requisição (verificação de conta / "
+                    "tráfego suspeito). Considere usar SCRAPER_PROXY_URL ou cadastrar "
+                    "o preço de referência do marketplace no painel."
+                ),
+            }
+
         products = self.parse_products(soup)
+        if not products:
+            return {
+                "success": False,
+                "products": [],
+                "error": (
+                    "Nenhum produto encontrado na listagem. O Mercado Livre pode estar "
+                    "entregando uma página reduzida (JavaScript) ou a estrutura mudou."
+                ),
+            }
         return {"success": True, "products": products, "error": None}
 
     @staticmethod

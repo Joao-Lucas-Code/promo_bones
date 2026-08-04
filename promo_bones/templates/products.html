@@ -58,10 +58,29 @@
                     <span class="price-old">R$ {{ "%.2f"|format(p.original_price) }}</span>
                     {% endif %}
                     <div class="price-current">R$ {{ "%.2f"|format(p.current_price) }}</div>
+                    {% if p.marketplace_price and p.marketplace_price < p.current_price %}
+                    <div class="mt-1">
+                        <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10">
+                            <i class="bi bi-shop-window"></i> ML: R$ {{ "%.2f"|format(p.marketplace_price) }}
+                        </span>
+                        <span class="badge bg-info bg-opacity-10 text-info border border-info border-opacity-10">
+                            economia R$ {{ "%.2f"|format(p.current_price - p.marketplace_price) }}
+                        </span>
+                    </div>
+                    {% elif p.marketplace_price %}
+                    <div class="mt-1">
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10">
+                            <i class="bi bi-shop-window"></i> ML: R$ {{ "%.2f"|format(p.marketplace_price) }}
+                        </span>
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="d-flex gap-2">
                     <a href="/messages" class="btn btn-sm btn-accent flex-fill">
                         <i class="bi bi-send"></i> Enviar
+                    </a>
+                    <a href="/products/{{ p.id }}/marketplace" class="btn btn-sm btn-outline-primary" title="Editar referência ML">
+                        <i class="bi bi-shop-window"></i>
                     </a>
                     {% if p.url %}
                     <a href="{{ p.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Referência Marketplace - Promo Bonés{% endblock %}
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-shop-window"></i> Referência de Marketplace</h2>
+
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title mb-3">{{ product.name }}</h5>
+        <p class="text-muted">
+            Preço atual no site: <strong>R$ {{ "%.2f"|format(product.current_price) }}</strong>
+        </p>
+
+        <form method="post">
+            <div class="mb-3">
+                <label class="form-label">URL no Mercado Livre (ou outro marketplace)</label>
+                <input type="url" name="marketplace_url" class="form-control"
+                       placeholder="https://www.mercadolivre.com.br/..."
+                       value="{{ product.marketplace_url or '' }}">
+                <div class="form-text">Use o link direto do anúncio mais barato.</div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Preço no marketplace</label>
+                <input type="text" name="marketplace_price" class="form-control"
+                       placeholder="139.00"
+                       value="{{ '%.2f'|format(product.marketplace_price) if product.marketplace_price else '' }}">
+                <div class="form-text">Ex: 139,00 ou 139.00. Deixe em branco para remover.</div>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-accent">
+                    <i class="bi bi-check-lg"></i> Salvar referência
+                </button>
+                <a href="/products" class="btn btn-outline-secondary">Voltar</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

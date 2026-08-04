@@ -49,6 +49,8 @@ class Product(Base):
     available = Column(Boolean, default=True)
     sku = Column(String, nullable=True)
     tags = Column(Text, nullable=True)  # ex: "esportivo,aba-nene,preto"
+    marketplace_url = Column(Text, nullable=True)  # link de referência (ex: Mercado Livre)
+    marketplace_price = Column(Float, nullable=True)  # preço de referência no marketplace
     scraped_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
