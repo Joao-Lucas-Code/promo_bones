@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Cupons - Promo Bones{% endblock %}
+{% block content %}
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-plus-circle"></i> Novo Cupom
+            </div>
+            <div class="card-body">
+                <form method="post" action="/coupons/add">
+                    <div class="mb-3">
+                        <label class="form-label">Código *</label>
+                        <input type="text" name="code" class="form-control" placeholder="EX: PROMO10" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <input type="text" name="description" class="form-control" placeholder="10% OFF em todo site">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Loja</label>
+                        <select name="site_id" class="form-select">
+                            <option value="">Geral</option>
+                            {% for s in sites %}
+                            <option value="{{ s.id }}">{{ s.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Valor</label>
+                            <input type="number" step="0.01" name="discount_value" class="form-control" placeholder="10">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Tipo</label>
+                            <select name="discount_type" class="form-select">
+                                <option value="percent">%</option>
+                                <option value="fixed">R$</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Compra mínima (R$)</label>
+                        <input type="number" step="0.01" name="min_purchase" class="form-control" placeholder="0">
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">
+                        <i class="bi bi-plus-lg"></i> Adicionar Cupom
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-ticket-perforated"></i> Cupons Cadastrados
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Loja</th>
+                                <th>Desconto</th>
+                                <th>Mínimo</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in coupons %}
+                            <tr>
+                                <td><code class="fw-bold">{{ c.code }}</code></td>
+                                <td>{{ c.site.name if c.site else 'Geral' }}</td>
+                                <td>
+                                    {% if c.discount_value %}
+                                    {{ "%.0f"|format(c.discount_value) }}{{ '%' if c.discount_type == 'percent' else ' R$' }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>R$ {{ "%.2f"|format(c.min_purchase) if c.min_purchase else '0,00' }}</td>
+                                <td>
+                                    <span class="badge {% if c.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                                        {{ 'Ativo' if c.is_active else 'Inativo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button onclick="toggleCoupon({{ c.id }})" class="btn btn-sm btn-outline-primary">
+                                            {{ 'Desativar' if c.is_active else 'Ativar' }}
+                                        </button>
+                                        <form method="post" action="/coupons/{{ c.id }}/delete" class="d-inline" onsubmit="return confirm('Remover cupom?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Nenhum cupom cadastrado</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleCoupon(id) {
+    fetch('/coupons/' + id + '/toggle', {method: 'POST'})
+        .then(r => r.json())
+        .then(() => location.reload());
+}
+</script>
+{% endblock %}

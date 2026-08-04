@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Sites - Promo Bones{% endblock %}
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-globe"></i> Sites Monitorados</h2>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-plus-circle"></i> Adicionar Novo Site
+            </div>
+            <div class="card-body">
+                <form method="post" action="/sites/add">
+                    <div class="mb-3">
+                        <label class="form-label">Slug (identificador único) *</label>
+                        <input type="text" name="slug" class="form-control" placeholder="ex: minha-loja" required>
+                        <div class="form-text">Sem espaços, use hífens. Ex: thedustcompany</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Loja *</label>
+                        <input type="text" name="name" class="form-control" placeholder="ex: Minha Loja" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URL Base *</label>
+                        <input type="url" name="base_url" class="form-control" placeholder="https://www.minhaloja.com.br" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Caminho da Categoria (opcional)</label>
+                        <input type="text" name="category_url" class="form-control" placeholder="/categoria/bones/">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Caminho de Busca (opcional)</label>
+                        <input type="text" name="search_url" class="form-control" placeholder="/busca/bone">
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">
+                        <i class="bi bi-plus-lg"></i> Adicionar Site
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    {% for site in sites %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <h5 class="card-title fw-bold mb-0">{{ site.name }}</h5>
+                    <span class="badge {% if site.enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                        {{ 'Ativo' if site.enabled else 'Inativo' }}
+                    </span>
+                </div>
+                <p class="text-muted small mb-2">
+                    <i class="bi bi-link-45deg"></i> {{ site.base_url }}
+                </p>
+                <p class="text-muted small mb-1">
+                    <i class="bi bi-folder"></i> {{ site.category_url or site.search_url or '-' }}
+                </p>
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-hash"></i> {{ site.slug }}
+                </p>
+                <div class="d-flex gap-2">
+                    <button onclick="toggleSite({{ site.id }})" class="btn btn-sm {% if site.enabled %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                        {{ 'Desativar' if site.enabled else 'Ativar' }}
+                    </button>
+                    <button onclick="runSiteScraper('{{ site.slug }}')" class="btn btn-sm btn-accent">
+                        <i class="bi bi-arrow-clockwise"></i> Scrap
+                    </button>
+                    <form method="post" action="/sites/{{ site.id }}/delete" class="d-inline" onsubmit="return confirm('Remover este site? Os produtos associados serão apagados.')">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-globe text-muted" style="font-size:3rem;"></i>
+        <p class="text-muted mt-2">Nenhum site cadastrado.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleSite(id) {
+    fetch('/sites/' + id + '/toggle', {method: 'POST'})
+        .then(r => r.json())
+        .then(() => location.reload());
+}
+function runSiteScraper(slug) {
+    fetch('/api/scraper/run/' + slug, {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            alert('Scraper de ' + slug + ' finalizado!');
+        });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Produtos - Promo Bones{% endblock %}
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-box-seam"></i> Produtos</h2>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Buscar</label>
+                <input type="text" name="search" class="form-control" placeholder="Nome do produto..." value="{{ search or '' }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Loja</label>
+                <select name="site_id" class="form-select">
+                    <option value="">Todas</option>
+                    {% for s in sites %}
+                    <option value="{{ s.id }}" {% if site_id == s.id %}selected{% endif %}>{{ s.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Desconto mínimo %</label>
+                <input type="number" name="min_discount" class="form-control" placeholder="Ex: 20" value="{{ min_discount or '' }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-accent w-100">
+                    <i class="bi bi-search"></i> Filtrar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Products Grid -->
+<div class="row g-3">
+    {% for p in products %}
+    <div class="col-md-6 col-lg-4 col-xl-3">
+        <div class="product-card h-100">
+            {% if p.image_url %}
+            <img src="{{ p.image_url }}" alt="{{ p.name }}">
+            {% else %}
+            <div class="d-flex align-items-center justify-content-center bg-light" style="height:180px;">
+                <i class="bi bi-image text-muted" style="font-size:3rem;"></i>
+            </div>
+            {% endif %}
+            <div class="body">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                    <span class="badge bg-secondary">{{ p.site.name if p.site else '-' }}</span>
+                    {% if p.discount_percent %}
+                    <span class="badge badge-discount">-{{ "%.0f"|format(p.discount_percent) }}%</span>
+                    {% endif %}
+                </div>
+                <h6 class="fw-semibold mb-2" style="min-height:40px;">{{ p.name[:60] }}{% if p.name|length > 60 %}...{% endif %}</h6>
+                <div class="mb-2">
+                    {% if p.original_price %}
+                    <span class="price-old">R$ {{ "%.2f"|format(p.original_price) }}</span>
+                    {% endif %}
+                    <div class="price-current">R$ {{ "%.2f"|format(p.current_price) }}</div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/messages" class="btn btn-sm btn-accent flex-fill">
+                        <i class="bi bi-send"></i> Enviar
+                    </a>
+                    {% if p.url %}
+                    <a href="{{ p.url }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-box-arrow-up-right"></i>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="col-12 text-center py-5">
+        <i class="bi bi-inbox text-muted" style="font-size:3rem;"></i>
+        <p class="text-muted mt-2">Nenhum produto encontrado. Execute o scraper primeiro.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

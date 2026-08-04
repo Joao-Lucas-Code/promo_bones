@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Mensagens - Promo Bones{% endblock %}
+{% block content %}
+<h2 class="fw-bold mb-4"><i class="bi bi-send"></i> Mensagens</h2>
+
+<div class="row">
+    <!-- Gerar Nova -->
+    <div class="col-lg-5 mb-4">
+        <div class="card">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-plus-circle"></i> Gerar Nova Mensagem
+            </div>
+            <div class="card-body">
+                <form method="post" action="/messages/generate">
+                    <div class="mb-3">
+                        <label class="form-label">Produto *</label>
+                        <select name="product_id" class="form-select" required>
+                            <option value="">Selecione...</option>
+                            {% for p in products %}
+                            <option value="{{ p.id }}">
+                                [{{ p.site.name if p.site else '?' }}] {{ p.name[:50] }} — R$ {{ "%.2f"|format(p.current_price) }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cupom (opcional)</label>
+                        <select name="coupon_id" class="form-select">
+                            <option value="">Sem cupom</option>
+                            {% for c in coupons %}
+                            <option value="{{ c.id }}">{{ c.code }} — {{ c.description or 'Sem descrição' }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-accent w-100">
+                        <i class="bi bi-magic"></i> Gerar Mensagem
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Mensagens -->
+    <div class="col-lg-7">
+        <div class="card">
+            <div class="card-header bg-white fw-bold">
+                <i class="bi bi-list"></i> Mensagens Criadas
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Produto</th>
+                                <th>Cupom</th>
+                                <th>Status</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for m in messages %}
+                            <tr>
+                                <td>#{{ m.id }}</td>
+                                <td>
+                                    {% if m.product %}
+                                    {{ m.product.name[:40] }}{% if m.product.name|length > 40 %}...{% endif %}
+                                    {% else %}-{% endif %}
+                                </td>
+                                <td><code>{{ m.coupon_code or '-' }}</code></td>
+                                <td>
+                                    {% if m.status == 'sent' %}
+                                    <span class="badge bg-success">Enviado</span>
+                                    {% elif m.status == 'draft' %}
+                                    <span class="badge bg-warning text-dark">Rascunho</span>
+                                    {% elif m.status == 'error' %}
+                                    <span class="badge bg-danger">Erro</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ m.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button onclick="previewMessage({{ m.id }})" class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#previewModal">
+                                            <i class="bi bi-eye"></i>
+                                        </button>
+                                        {% if m.status == 'draft' %}
+                                        <button onclick="sendMessage({{ m.id }})" class="btn btn-sm btn-accent">
+                                            <i class="bi bi-send"></i>
+                                        </button>
+                                        {% endif %}
+                                        <form method="post" action="/messages/{{ m.id }}/delete" class="d-inline" onsubmit="return confirm('Excluir mensagem?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted py-4">Nenhuma mensagem criada</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Preview da Mensagem</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="previewContent"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function previewMessage(id) {
+    fetch('/messages/' + id + '/preview')
+        .then(r => r.json())
+        .then(data => {
+            let html = '';
+            if (data.image_url) {
+                html += '<img src="' + data.image_url + '" class="img-fluid rounded mb-3" style="max-height:200px;object-fit:cover;">';
+            }
+            html += '<div class="telegram-preview">' + escapeHtml(data.content) + '</div>';
+            document.getElementById('previewContent').innerHTML = html;
+        });
+}
+
+function sendMessage(id) {
+    if (!confirm('Enviar esta mensagem para o Telegram?')) return;
+    fetch('/messages/' + id + '/send', {method: 'POST'})
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                alert('Mensagem enviada com sucesso!');
+                location.reload();
+            } else {
+                alert('Erro: ' + (data.error || 'Erro desconhecido'));
+            }
+        });
+}
+
+function escapeHtml(text) {
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+</script>
+{% endblock %}
