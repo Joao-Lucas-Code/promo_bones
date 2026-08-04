@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Dashboard - Promo Bonés{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="fw-bold">Dashboard</h2>
-    <div class="d-flex gap-2">
+<!-- Header -->
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-4 gap-3">
+    <div>
+        <h2 class="fw-bold mb-1">Dashboard</h2>
+        <p class="text-muted mb-0">Visão geral das promoções e status do painel</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
         <button onclick="runScraper('all')" class="btn btn-accent">
             <i class="bi bi-arrow-clockwise"></i> Rodar Scraper
         </button>
-        <a href="/sites" class="btn btn-outline-success">
-            <i class="bi bi-globe"></i> Adicionar Site
-        </a>
         <a href="/messages" class="btn btn-outline-primary">
             <i class="bi bi-send"></i> Nova Mensagem
         </a>
@@ -18,73 +19,104 @@
 
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="icon bg-primary bg-opacity-10 text-primary">
-                <i class="bi bi-box-seam"></i>
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card stat-products h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="value">{{ stats.products }}</div>
+                    <div class="label">Produtos rastreados</div>
+                </div>
+                <div class="icon bg-primary bg-opacity-10 text-primary">
+                    <i class="bi bi-box-seam"></i>
+                </div>
             </div>
-            <div class="value">{{ stats.products }}</div>
-            <div class="label">Produtos rastreados</div>
+            <div class="mt-2 text-success small"><i class="bi bi-graph-up-arrow"></i> Atualizados em tempo real</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="icon bg-success bg-opacity-10 text-success">
-                <i class="bi bi-ticket-perforated"></i>
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card stat-coupons h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="value">{{ stats.coupons }}</div>
+                    <div class="label">Cupons ativos</div>
+                </div>
+                <div class="icon bg-success bg-opacity-10 text-success">
+                    <i class="bi bi-ticket-perforated"></i>
+                </div>
             </div>
-            <div class="value">{{ stats.coupons }}</div>
-            <div class="label">Cupons ativos</div>
+            <div class="mt-2"><a href="/coupons" class="small text-decoration-none">Gerenciar cupons →</a></div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="icon bg-warning bg-opacity-10 text-warning">
-                <i class="bi bi-send"></i>
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card stat-sent h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="value">{{ stats.sent }}</div>
+                    <div class="label">Mensagens enviadas</div>
+                </div>
+                <div class="icon bg-warning bg-opacity-10 text-warning">
+                    <i class="bi bi-send-check"></i>
+                </div>
             </div>
-            <div class="value">{{ stats.sent }}</div>
-            <div class="label">Mensagens enviadas</div>
+            <div class="mt-2 text-muted small">{{ stats.messages }} mensagens criadas no total</div>
         </div>
     </div>
-    <div class="col-md-3">
-        <div class="stat-card">
-            <div class="icon bg-info bg-opacity-10 text-info">
-                <i class="bi bi-file-earmark-text"></i>
+    <div class="col-md-6 col-xl-3">
+        <div class="stat-card stat-deals h-100">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <div class="value">{{ best_deals|length }}</div>
+                    <div class="label">Melhores ofertas hoje</div>
+                </div>
+                <div class="icon bg-info bg-opacity-10 text-info">
+                    <i class="bi bi-fire"></i>
+                </div>
             </div>
-            <div class="value">{{ stats.messages }}</div>
-            <div class="label">Mensagens criadas</div>
+            <div class="mt-2"><a href="/products" class="small text-decoration-none">Ver produtos →</a></div>
         </div>
     </div>
 </div>
 
-<div class="row">
+<div class="row g-4">
     <!-- Bot Status -->
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header bg-white fw-bold">
+    <div class="col-lg-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-0 pt-4 ps-4">
                 <i class="bi bi-robot"></i> Status do Bot Telegram
             </div>
             <div class="card-body">
                 {% if bot_status.configured %}
                     <div class="d-flex align-items-center mb-3">
-                        <span class="status-dot status-online"></span>
+                        <span class="status-dot status-online pulse"></span>
                         <span class="fw-semibold">Bot conectado</span>
                     </div>
-                    <p class="mb-1"><strong>Nome:</strong> {{ bot_status.bot_name }}</p>
-                    <p class="mb-1"><strong>Username:</strong> @{{ bot_status.bot_username }}</p>
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center mb-2">
+                            <div class="bg-primary bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" style="width:42px;height:42px;">
+                                <i class="bi bi-check-lg text-primary"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold">{{ bot_status.bot_name }}</div>
+                                <div class="text-muted small">@{{ bot_status.bot_username }}</div>
+                            </div>
+                        </div>
+                    </div>
                     <p class="mb-3"><strong>Grupo:</strong> {{ bot_status.group_id or 'Não configurado' }}</p>
-                    <button onclick="testBot()" class="btn btn-sm btn-outline-primary">Testar Envio</button>
+                    <button onclick="testBot()" class="btn btn-sm btn-outline-primary w-100">
+                        <i class="bi bi-chat-dots"></i> Testar Envio
+                    </button>
                 {% else %}
                     <div class="d-flex align-items-center mb-3">
                         <span class="status-dot status-offline"></span>
                         <span class="fw-semibold">Bot não configurado</span>
                     </div>
-                    <p class="text-muted">{{ bot_status.error }}</p>
-                    <div class="alert alert-info">
+                    <p class="text-muted small">{{ bot_status.error }}</p>
+                    <div class="alert alert-info small">
                         <strong>Como configurar:</strong>
-                        <ol class="mb-0 mt-2">
+                        <ol class="mb-0 mt-2 ps-3">
                             <li>Crie um bot com o <a href="https://t.me/BotFather" target="_blank">@BotFather</a></li>
                             <li>Copie o token recebido</li>
-                            <li>Defina a variável <code>TELEGRAM_BOT_TOKEN</code></li>
+                            <li>Defina a variável <code>TELEGRAM_BOT_TOKEN</code> no <code>.env</code></li>
                         </ol>
                     </div>
                 {% endif %}
@@ -92,75 +124,73 @@
         </div>
     </div>
 
-    <!-- Cupons Dicas -->
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100 border-warning">
-            <div class="card-header bg-warning bg-opacity-10 fw-bold">
-                <i class="bi bi-ticket-perforated"></i> Onde Achar Cupons
+    <!-- Scraper Chart -->
+    <div class="col-lg-8">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-0 pt-4 ps-4 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-bar-chart-line"></i> Histórico do Scraper</span>
+                <span class="text-muted small">Últimas execuções</span>
             </div>
             <div class="card-body">
-                <p class="small text-muted mb-2">Cupons são <strong>manuais</strong> — você cadastra no painel. Aqui estão as melhores fontes:</p>
-                <ul class="small mb-0">
-                    <li><strong>Banner do site</strong> — faixa no topo (ex: "Use PROMO10")</li>
-                    <li><strong>Newsletter por e-mail</strong> — cadastre-se nas lojas</li>
-                    <li><strong>Instagram das marcas</strong> — stories com cupons</li>
-                    <li><strong>Grupos de cupons</strong> — @Promobit, @Gatry, @Pelando</li>
-                    <li><strong>Mercado Livre</strong> — cupons automáticos no app</li>
-                    <li><strong>Influenciadores</strong> — códigos de afiliado (ex: Lactea)</li>
-                </ul>
-                <div class="mt-3">
-                    <a href="/coupons" class="btn btn-sm btn-warning w-100">
-                        <i class="bi bi-plus-lg"></i> Cadastrar Cupom
-                    </a>
-                </div>
+                <canvas id="scraperChart" height="120"></canvas>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Best Deals -->
-    <div class="col-lg-4 mb-4">
-        <div class="card h-100">
-            <div class="card-header bg-white fw-bold d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-fire"></i> Melhores Ofertas</span>
+<!-- Best Deals -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-0 pt-4 ps-4 d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-fire text-danger"></i> Melhores Ofertas</span>
                 <a href="/products" class="btn btn-sm btn-outline-primary">Ver todos</a>
             </div>
             <div class="card-body">
                 {% if best_deals %}
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Produto</th>
-                                <th>Preço</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for p in best_deals %}
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        {% if p.image_url %}
-                                        <img src="{{ p.image_url }}" class="rounded" style="width:40px;height:40px;object-fit:cover;margin-right:10px;">
+                <div class="row g-3">
+                    {% for p in best_deals %}
+                    <div class="col-md-6 col-lg-4 col-xl">
+                        <div class="deal-card h-100">
+                            <div class="position-relative">
+                                {% if p.image_url %}
+                                <img src="{{ p.image_url }}" alt="{{ p.name }}">
+                                {% else %}
+                                <div class="d-flex align-items-center justify-content-center bg-light" style="height:160px;">
+                                    <i class="bi bi-image text-muted" style="font-size:2.5rem;"></i>
+                                </div>
+                                {% endif %}
+                                {% if p.discount_percent %}
+                                <span class="badge-discount position-absolute top-0 end-0 m-2">-{{ "%.0f"|format(p.discount_percent) }}%</span>
+                                {% endif %}
+                            </div>
+                            <div class="p-3">
+                                <div class="text-muted small mb-1">{{ p.site.name if p.site else 'Loja' }}</div>
+                                <h6 class="fw-semibold mb-2" style="min-height:40px;">{{ p.name[:50] }}{% if p.name|length > 50 %}...{% endif %}</h6>
+                                <div class="d-flex align-items-end justify-content-between">
+                                    <div>
+                                        {% if p.original_price %}
+                                        <span class="price-old">R$ {{ "%.2f"|format(p.original_price) }}</span>
                                         {% endif %}
-                                        <span class="text-truncate" style="max-width:150px;" title="{{ p.name }}">{{ p.name[:40] }}{% if p.name|length > 40 %}...{% endif %}</span>
+                                        <div class="price-current">R$ {{ "%.2f"|format(p.current_price) }}</div>
                                     </div>
-                                </td>
-                                <td>
-                                    <span class="price-current">R$ {{ "%.2f"|format(p.current_price) }}</span>
-                                </td>
-                                <td>
                                     <a href="/messages" class="btn btn-sm btn-accent">
                                         <i class="bi bi-send"></i>
                                     </a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
                 {% else %}
-                <p class="text-muted text-center py-4">Nenhum produto com desconto encontrado. Rode o scraper!</p>
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox text-muted" style="font-size:3rem;"></i>
+                    <p class="text-muted mt-2">Nenhum produto com desconto encontrado. Rode o scraper!</p>
+                    <button onclick="runScraper('all')" class="btn btn-accent">
+                        <i class="bi bi-arrow-clockwise"></i> Rodar Scraper
+                    </button>
+                </div>
                 {% endif %}
             </div>
         </div>
@@ -168,83 +198,243 @@
 </div>
 
 <!-- Scraper Logs -->
-<div class="card">
-    <div class="card-header bg-white fw-bold">
-        <i class="bi bi-clock-history"></i> Últimas Execuções do Scraper
-    </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Site</th>
-                        <th>Status</th>
-                        <th>Encontrados</th>
-                        <th>Novos</th>
-                        <th>Atualizados</th>
-                        <th>Horário</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in latest_logs %}
-                    <tr>
-                        <td>{{ log.site.name if log.site else '-' }}</td>
-                        <td>
-                            {% if log.status == 'success' %}
-                            <span class="badge bg-success">Sucesso</span>
-                            {% elif log.status == 'running' %}
-                            <span class="badge bg-warning text-dark">Executando</span>
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-0 pt-4 ps-4">
+                <i class="bi bi-clock-history"></i> Últimas Execuções do Scraper
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Site</th>
+                                <th>Status</th>
+                                <th class="text-center">Encontrados</th>
+                                <th class="text-center">Novos</th>
+                                <th class="text-center">Atualizados</th>
+                                <th>Horário</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in latest_logs %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="log-icon bg-secondary bg-opacity-10 text-secondary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                            <i class="bi bi-globe"></i>
+                                        </div>
+                                        {{ log.site.name if log.site else '-' }}
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if log.status == 'success' %}
+                                    <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-10">Sucesso</span>
+                                    {% elif log.status == 'running' %}
+                                    <span class="badge bg-warning bg-opacity-10 text-warning border border-warning border-opacity-10">Executando</span>
+                                    {% else %}
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-10">Erro</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center fw-semibold">{{ log.products_found }}</td>
+                                <td class="text-center text-success">{{ log.products_new }}</td>
+                                <td class="text-center text-info">{{ log.products_updated }}</td>
+                                <td class="text-muted small">{{ log.started_at.strftime('%d/%m %H:%M') if log.started_at else '-' }}</td>
+                            </tr>
                             {% else %}
-                            <span class="badge bg-danger">Erro</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ log.products_found }}</td>
-                        <td>{{ log.products_new }}</td>
-                        <td>{{ log.products_updated }}</td>
-                        <td>{{ log.started_at.strftime('%d/%m %H:%M') if log.started_at else '-' }}</td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="6" class="text-center text-muted py-3">Nenhuma execução registrada</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">Nenhuma execução registrada</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function runScraper(site) {
     const btn = document.activeElement;
+    const originalHtml = btn.innerHTML;
     btn.disabled = true;
     btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i> Executando...';
     fetch('/api/scraper/run/' + site, {method: 'POST'})
         .then(r => r.json())
         .then(data => {
-            alert('Scraper executado! Recarregue a página para ver os resultados.');
             location.reload();
         })
         .catch(err => {
             alert('Erro: ' + err);
             btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Rodar Scraper';
+            btn.innerHTML = originalHtml;
         });
 }
 
 function testBot() {
+    const btn = document.querySelector('button[onclick="testBot()"]');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Enviando...';
+    }
     fetch('/api/bot/test-message', {method: 'POST', body: new URLSearchParams({text: '🧢 Teste do Promo Bonés!'})})
         .then(r => r.json())
         .then(data => {
             if (data.ok) alert('Mensagem de teste enviada com sucesso!');
             else alert('Erro: ' + (data.description || 'Erro desconhecido'));
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-chat-dots"></i> Testar Envio';
+            }
         });
 }
+
+// Chart.js - Scraper history
+const ctx = document.getElementById('scraperChart');
+{% if latest_logs %}
+const logLabels = [
+    {% for log in latest_logs|reverse %}
+    '{{ log.site.name[:10] if log.site else "?" }} {{ log.started_at.strftime("%H:%M") if log.started_at else "" }}',
+    {% endfor %}
+];
+const foundData = [
+    {% for log in latest_logs|reverse %}
+    {{ log.products_found }},
+    {% endfor %}
+];
+const newData = [
+    {% for log in latest_logs|reverse %}
+    {{ log.products_new }},
+    {% endfor %}
+];
+
+new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: logLabels,
+        datasets: [
+            {
+                label: 'Encontrados',
+                data: foundData,
+                backgroundColor: 'rgba(233, 69, 96, 0.8)',
+                borderColor: 'rgba(233, 69, 96, 1)',
+                borderWidth: 1,
+                borderRadius: 6
+            },
+            {
+                label: 'Novos',
+                data: newData,
+                backgroundColor: 'rgba(46, 204, 113, 0.8)',
+                borderColor: 'rgba(46, 204, 113, 1)',
+                borderWidth: 1,
+                borderRadius: 6
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'top',
+                align: 'end',
+                labels: { usePointStyle: true, boxWidth: 8 }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: { color: 'rgba(0,0,0,0.05)' }
+            },
+            x: {
+                grid: { display: false }
+            }
+        }
+    }
+});
+{% else %}
+ctx.parentElement.innerHTML = '<div class="d-flex flex-column align-items-center justify-content-center text-muted" style="height:150px;"><i class="bi bi-bar-chart-line" style="font-size:2rem;"></i><p class="mt-2 mb-0">Nenhum dado de scraper disponível</p></div>';
+{% endif %}
 </script>
 <style>
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+.status-dot.pulse {
+    box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    animation: pulse-green 2s infinite;
+}
+@keyframes pulse-green {
+    0% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(46, 204, 113, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(46, 204, 113, 0); }
+}
+
+.stat-card {
+    border: none;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.1);
+}
+.stat-card .icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+.stat-card .value {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #1a1a2e;
+    line-height: 1;
+}
+.stat-card .label {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-top: 0.25rem;
+}
+
+.deal-card {
+    background: white;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.deal-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+.deal-card img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+}
+
+.log-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 0.9rem;
+}
+
+.card {
+    border-radius: 16px;
+}
+.card-header {
+    border-radius: 16px 16px 0 0 !important;
+}
 </style>
 {% endblock %}
