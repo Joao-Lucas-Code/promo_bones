@@ -3,8 +3,8 @@ import html
 from datetime import datetime
 from typing import Optional
 
-from config import AFFILIATE_CONFIG
-from database import Product, Coupon, SessionLocal
+from .config import AFFILIATE_CONFIG
+from .database import Product, Coupon, SessionLocal
 
 
 class MessageGenerator:
@@ -143,7 +143,7 @@ def create_promo_message(product_id: int, coupon_id: Optional[int] = None) -> Op
         gen = MessageGenerator()
         msg_data = gen.generate_product_message(product, coupon)
 
-        from database import PromoMessage
+        from .database import PromoMessage
         msg = PromoMessage(
             product_id=product_id,
             content=msg_data["text"],

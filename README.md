@@ -44,8 +44,7 @@ cp promo_bones/.env.example promo_bones/.env
 # Edite promo_bones/.env com seu token do Telegram
 
 # 4. Rode o servidor
-cd promo_bones
-python main.py
+python run.py
 ```
 
 Acesse o painel em **http://localhost:5000**.

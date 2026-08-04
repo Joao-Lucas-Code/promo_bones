@@ -1,7 +1,7 @@
 """Integração com Telegram Bot API (síncrono com requests)."""
 import requests
-from config import TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
-from database import SessionLocal, PromoMessage
+from .config import TELEGRAM_BOT_TOKEN, TELEGRAM_GROUP_ID
+from .database import SessionLocal, PromoMessage
 
 TELEGRAM_API = "https://api.telegram.org"
 

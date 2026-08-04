@@ -5,8 +5,8 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 
-from config import USER_AGENT, REQUEST_TIMEOUT, SITES
-from database import SessionLocal, Product, PriceHistory, Site, ScraperLog
+from .config import USER_AGENT, REQUEST_TIMEOUT, SITES
+from .database import SessionLocal, Product, PriceHistory, Site, ScraperLog
 
 
 HEADERS = {"User-Agent": USER_AGENT}

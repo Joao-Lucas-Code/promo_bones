@@ -63,8 +63,9 @@ AMAZON_AFFILIATE_TAG=sua_tag_amazon
 > Para criar o bot e descobrir o `TELEGRAM_GROUP_ID`, siga o [GUIA_BOT_TELEGRAM.md](GUIA_BOT_TELEGRAM.md).
 
 ### 5. Inicie o servidor
+Na raiz do projeto, execute:
 ```bash
-python main.py
+python run.py
 ```
 
 O painel estará disponível em: **http://localhost:5000**

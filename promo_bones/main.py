@@ -8,11 +8,11 @@ from functools import wraps
 from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
 from sqlalchemy.orm import Session
 
-from config import APP_TITLE, APP_VERSION, SITES, SCRAPER_INTERVAL_MINUTES
-from database import init_db, get_db, Site, Product, Coupon, PromoMessage, ScraperLog
-from scraper import run_scraper, run_all_scrapers
-from message_generator import create_promo_message, MessageGenerator
-from telegram_bot import send_promo_message_sync, check_bot_config_sync
+from .config import APP_TITLE, APP_VERSION, SITES, SCRAPER_INTERVAL_MINUTES
+from .database import init_db, get_db, Site, Product, Coupon, PromoMessage, ScraperLog
+from .scraper import run_scraper, run_all_scrapers
+from .message_generator import create_promo_message, MessageGenerator
+from .telegram_bot import send_promo_message_sync, check_bot_config_sync
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "promo-bones-secret-key-change-later")
@@ -309,7 +309,7 @@ def api_bot_status():
 @app.route("/api/bot/test-message", methods=["POST"])
 def api_test_message():
     text = request.form.get("text", "🧢 Teste do bot Promo Bonés!")
-    from telegram_bot import send_text_sync
+    from .telegram_bot import send_text_sync
     result = send_text_sync(text)
     return jsonify(result)
 
