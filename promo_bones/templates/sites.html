@@ -5,8 +5,8 @@
 
 <div class="row mb-4">
     <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header bg-white fw-bold">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white fw-bold border-0 pt-4 ps-4">
                 <i class="bi bi-plus-circle"></i> Adicionar Novo Site
             </div>
             <div class="card-body">
@@ -44,29 +44,32 @@
 <div class="row g-3">
     {% for site in sites %}
     <div class="col-md-6 col-lg-4">
-        <div class="card h-100">
+        <div class="card h-100 border-0 shadow-sm site-card">
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-start mb-2">
                     <h5 class="card-title fw-bold mb-0">{{ site.name }}</h5>
-                    <span class="badge {% if site.enabled %}bg-success{% else %}bg-secondary{% endif %}">
+                    <span class="badge {% if site.enabled %}bg-success bg-opacity-10 text-success border border-success border-opacity-10{% else %}bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10{% endif %}">
                         {{ 'Ativo' if site.enabled else 'Inativo' }}
                     </span>
                 </div>
-                <p class="text-muted small mb-2">
+                <p class="text-muted small mb-2 text-truncate" title="{{ site.base_url }}">
                     <i class="bi bi-link-45deg"></i> {{ site.base_url }}
                 </p>
-                <p class="text-muted small mb-1">
+                <p class="text-muted small mb-1 text-truncate" title="{{ site.category_url or site.search_url or '-' }}">
                     <i class="bi bi-folder"></i> {{ site.category_url or site.search_url or '-' }}
                 </p>
                 <p class="text-muted small mb-3">
                     <i class="bi bi-hash"></i> {{ site.slug }}
                 </p>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 flex-wrap">
                     <button onclick="toggleSite({{ site.id }})" class="btn btn-sm {% if site.enabled %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
                         {{ 'Desativar' if site.enabled else 'Ativar' }}
                     </button>
                     <button onclick="runSiteScraper('{{ site.slug }}')" class="btn btn-sm btn-accent">
                         <i class="bi bi-arrow-clockwise"></i> Scrap
+                    </button>
+                    <button onclick="openEditModal({{ site.id }})" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editSiteModal">
+                        <i class="bi bi-pencil"></i>
                     </button>
                     <form method="post" action="/sites/{{ site.id }}/delete" class="d-inline" onsubmit="return confirm('Remover este site? Os produtos associados serão apagados.')">
                         <button type="submit" class="btn btn-sm btn-outline-danger">
@@ -84,6 +87,50 @@
     </div>
     {% endfor %}
 </div>
+
+<!-- Edit Modal -->
+<div class="modal fade" id="editSiteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square"></i> Editar Site</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="editSiteForm" method="post">
+                <div class="modal-body">
+                    <input type="hidden" id="editSiteId">
+                    <div class="mb-3">
+                        <label class="form-label">Slug</label>
+                        <input type="text" id="editSlug" class="form-control" disabled>
+                        <div class="form-text">O slug não pode ser alterado.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nome da Loja *</label>
+                        <input type="text" name="name" id="editName" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">URL Base *</label>
+                        <input type="url" name="base_url" id="editBaseUrl" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Caminho da Categoria (opcional)</label>
+                        <input type="text" name="category_url" id="editCategoryUrl" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Caminho de Busca (opcional)</label>
+                        <input type="text" name="search_url" id="editSearchUrl" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-accent">
+                        <i class="bi bi-check-lg"></i> Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -94,11 +141,38 @@ function toggleSite(id) {
         .then(() => location.reload());
 }
 function runSiteScraper(slug) {
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise spin"></i>';
     fetch('/api/scraper/run/' + slug, {method: 'POST'})
         .then(r => r.json())
         .then(data => {
             alert('Scraper de ' + slug + ' finalizado!');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Scrap';
+        });
+}
+
+function openEditModal(siteId) {
+    fetch('/sites/' + siteId + '/edit')
+        .then(r => r.json())
+        .then(data => {
+            document.getElementById('editSiteId').value = data.id;
+            document.getElementById('editSlug').value = data.slug;
+            document.getElementById('editName').value = data.name;
+            document.getElementById('editBaseUrl').value = data.base_url;
+            document.getElementById('editCategoryUrl').value = data.category_url || '';
+            document.getElementById('editSearchUrl').value = data.search_url || '';
+            document.getElementById('editSiteForm').action = '/sites/' + siteId + '/edit';
         });
 }
 </script>
+<style>
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+.site-card { transition: transform 0.2s, box-shadow 0.2s; }
+.site-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+</style>
 {% endblock %}

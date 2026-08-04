@@ -190,7 +190,11 @@ class MercadoLivreScraper(BaseScraper):
         return products
 
     def run(self) -> dict:
-        url = f"{self.site_config['base_url']}{self.site_config.get('search_url', '')}_OrderId_PRICE_NoIndex_True"
+        search_url = self.site_config.get("search_url", "")
+        # Adiciona ordenação por preço apenas se a URL ainda não tiver ordenação definida
+        if "_OrderId" not in search_url:
+            search_url += "_OrderId_PRICE_NoIndex_True"
+        url = f"{self.site_config['base_url']}{search_url}"
         soup = self.fetch(url)
         if not soup:
             return {"success": False, "products": [], "error": "Falha ao carregar página"}

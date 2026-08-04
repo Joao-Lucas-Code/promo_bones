@@ -38,9 +38,9 @@ SITES = {
         "enabled": True,
     },
     "mercadolivre": {
-        "name": "Mercado Livre",
+        "name": "Mercado Livre - The Dust Company",
         "base_url": "https://lista.mercadolivre.com.br",
-        "search_url": "/bone-aba-curva",
+        "search_url": "/loja/the-dust-company/_Container_ESP-EE01090EC0444C229575E36FBC148FE81031939350-Bonés",
         "enabled": True,
     },
 }

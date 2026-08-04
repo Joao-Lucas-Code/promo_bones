@@ -29,7 +29,7 @@ def get_db_session():
 @app.before_request
 def before_first():
     init_db()
-    # Seed sites on first run
+    # Seed/update default sites from config
     db = next(get_db())
     try:
         for slug, cfg in SITES.items():
@@ -44,6 +44,12 @@ def before_first():
                     enabled=cfg.get("enabled", True),
                 )
                 db.add(site)
+            else:
+                # Atualiza configurações padrão sem sobrescrever o estado enabled do usuário
+                site.name = cfg["name"]
+                site.base_url = cfg["base_url"]
+                site.category_url = cfg.get("category_url")
+                site.search_url = cfg.get("search_url")
         db.commit()
     finally:
         db.close()
@@ -128,6 +134,35 @@ def delete_site(site_id):
         if site:
             db.delete(site)
             db.commit()
+        return redirect("/sites")
+    finally:
+        db.close()
+
+@app.route("/sites/<int:site_id>/edit", methods=["GET", "POST"])
+def edit_site(site_id):
+    db = next(get_db())
+    try:
+        site = db.query(Site).filter(Site.id == site_id).first()
+        if not site:
+            return "Site não encontrado", 404
+
+        if request.method == "GET":
+            return jsonify({
+                "id": site.id,
+                "slug": site.slug,
+                "name": site.name,
+                "base_url": site.base_url,
+                "category_url": site.category_url,
+                "search_url": site.search_url,
+                "enabled": site.enabled,
+            })
+
+        # POST
+        site.name = request.form.get("name", site.name).strip()
+        site.base_url = request.form.get("base_url", site.base_url).strip()
+        site.category_url = request.form.get("category_url", "").strip() or None
+        site.search_url = request.form.get("search_url", "").strip() or None
+        db.commit()
         return redirect("/sites")
     finally:
         db.close()
