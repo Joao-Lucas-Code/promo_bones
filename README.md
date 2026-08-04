@@ -71,6 +71,21 @@ Após o deploy, acesse a URL gerada pelo Render. O banco SQLite será criado aut
 
 > ⚠️ **Atenção:** no plano gratuito do Render, o banco SQLite é reiniciado quando o serviço "dorme" ou há novo deploy. Para dados importantes, considere migrar para PostgreSQL.
 
+## 🟢 Keep Alive (GitHub Actions)
+
+Para evitar que o serviço gratuito do Render "durma" após 15 minutos de inatividade, há um workflow do GitHub Actions que pinga o serviço a cada 15 minutos.
+
+### Configuração
+
+1. Após o deploy no Render, copie a URL do seu serviço (ex: `https://promo-bones.onrender.com`).
+2. No GitHub, vá em **Settings → Secrets and variables → Actions**.
+3. Clique em **New repository secret**.
+4. Nome: `RENDER_URL`
+5. Valor: a URL do seu serviço (sem barra no final)
+6. Salve.
+
+O workflow está em [`.github/workflows/keep-alive.yml`](.github/workflows/keep-alive.yml) e bate no endpoint `/api/health`.
+
 ## ⚙️ Tecnologias
 
 - Python 3.10+

@@ -327,5 +327,12 @@ def api_stats():
     finally:
         db.close()
 
+# === HEALTH ===
+@app.route("/api/health")
+def api_health():
+    """Endpoint para keep-alive (GitHub Actions / UptimeRobot)."""
+    return jsonify({"status": "ok", "service": "promo-bones"})
+
+
 if __name__ == "__main__":
     app.run(host="127.0.0.1", port=5000, debug=False)

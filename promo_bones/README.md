@@ -84,6 +84,12 @@ Este projeto pode ser deployado no [Render](https://render.com) usando o `render
 
 > No plano gratuito, o banco SQLite é reiniciado quando o serviço "dorme". Use PostgreSQL se precisar de persistência garantida.
 
+## 🟢 Keep Alive
+
+O repositório inclui um workflow do GitHub Actions (`.github/workflows/keep-alive.yml`) que pinga o endpoint `/api/health` a cada 15 minutos para manter o serviço do Render acordado.
+
+Configure o secret `RENDER_URL` nas configurações do GitHub com a URL do seu serviço (ex: `https://promo-bones.onrender.com`).
+
 ## 🖥️ Funcionalidades do Painel
 
 | Página | O que faz |
