@@ -114,7 +114,58 @@ class DustCompanyScraper(BaseScraper):
 
 
 class MidasTouchScraper(DustCompanyScraper):
-    """Scraper para Midas Touch (mesma estrutura)."""
+    """Scraper para Midas Touch (Nuvem Shop)."""
+
+    def parse_products(self, soup: BeautifulSoup) -> list[dict]:
+        products = []
+        # Nuvem Shop: .js-item-product ou .item-product
+        items = soup.select(".js-item-product, .item-product")
+
+        for item in items[:20]:
+            name_el = item.select_one(".js-item-name, .item-name")
+            price_el = item.select_one(".js-item-price, .item-price")
+            old_price_el = item.select_one(".item-price-compare, .compare-price, .item-price-promotion")
+            img_el = item.select_one(".js-item-image, .item-image img, img")
+            link_el = item.select_one("a[href]")
+
+            if not name_el or not price_el:
+                continue
+
+            name = name_el.get_text(strip=True)
+            price = self._parse_price(price_el.get_text(strip=True))
+            old_price = self._parse_price(old_price_el.get_text(strip=True)) if old_price_el else None
+
+            discount = None
+            if old_price and price and old_price > price:
+                discount = round((old_price - price) / old_price * 100, 1)
+
+            image = None
+            if img_el:
+                image = img_el.get("data-srcset") or img_el.get("srcset") or img_el.get("data-src") or img_el.get("src")
+                # Pega a primeira URL do srcset
+                if image:
+                    image = image.split(",")[0].strip().split(" ")[0]
+                if image and image.startswith("//"):
+                    image = "https:" + image
+                elif image and image.startswith("data:"):
+                    image = None
+
+            link = None
+            if link_el:
+                link = urljoin(self.site_config["base_url"], link_el["href"])
+
+            products.append({
+                "name": name,
+                "current_price": price,
+                "original_price": old_price,
+                "discount_percent": discount,
+                "image_url": image,
+                "url": link,
+                "sku": None,
+                "tags": "aba-nene,midas",
+            })
+
+        return products
 
     def run(self) -> dict:
         url = self.site_config["base_url"] + self.site_config.get("category_url", "")
@@ -122,9 +173,6 @@ class MidasTouchScraper(DustCompanyScraper):
         if not soup:
             return {"success": False, "products": [], "error": "Falha ao carregar página"}
         products = self.parse_products(soup)
-        # Tag específica
-        for p in products:
-            p["tags"] = "aba-nene,midas"
         return {"success": True, "products": products, "error": None}
 
 
