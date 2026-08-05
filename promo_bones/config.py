@@ -66,3 +66,9 @@ SCRAPER_INTERVAL_MINUTES = int(os.getenv("SCRAPER_INTERVAL", "60"))
 # === APP ===
 APP_TITLE = "Promo Bonés - Painel Admin"
 APP_VERSION = "1.0.0"
+
+# === ADMIN AUTH ===
+# Configure usuário e senha forte via variáveis de ambiente.
+# Deixe ADMIN_USERNAME vazio para desabilitar a autenticação (apenas desenvolvimento local).
+ADMIN_USERNAME = os.getenv("ADMIN_USERNAME", "admin")
+ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "")

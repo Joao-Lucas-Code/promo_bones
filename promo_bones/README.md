@@ -81,9 +81,12 @@ Este projeto pode ser deployado no [Render](https://render.com) usando o `render
    - `TELEGRAM_GROUP_ID`
    - `ML_AFFILIATE_TAG` (opcional)
    - `AMAZON_AFFILIATE_TAG` (opcional)
+   - `ADMIN_USERNAME` — usuário do painel admin
+   - `ADMIN_PASSWORD` — senha forte do painel admin
 4. Faça o deploy.
 
 > No plano gratuito, o banco SQLite é reiniciado quando o serviço "dorme". Use PostgreSQL se precisar de persistência garantida.
+> O painel admin é protegido por HTTP Basic Auth. O endpoint `/api/health` permanece público para o keep-alive.
 
 ## 🟢 Keep Alive
 

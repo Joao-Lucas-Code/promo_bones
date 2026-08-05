@@ -20,3 +20,7 @@ services:
         sync: false
       - key: SCRAPER_INTERVAL
         value: 60
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false

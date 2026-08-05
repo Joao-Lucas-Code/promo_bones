@@ -1,14 +1,18 @@
 """Flask app - Painel Admin Promo Bonés."""
 import asyncio
+import base64
 import os
 import requests as req
 from datetime import datetime
 from functools import wraps
 
-from flask import Flask, render_template, request, redirect, url_for, jsonify, flash
+from flask import Flask, Response, render_template, request, redirect, url_for, jsonify, flash
 from sqlalchemy.orm import Session
 
-from .config import APP_TITLE, APP_VERSION, SITES, SCRAPER_INTERVAL_MINUTES
+from .config import (
+    APP_TITLE, APP_VERSION, SITES, SCRAPER_INTERVAL_MINUTES,
+    ADMIN_USERNAME, ADMIN_PASSWORD,
+)
 from .database import init_db, get_db, Site, Product, Coupon, PromoMessage, ScraperLog
 from .scraper import run_scraper, run_all_scrapers
 from .message_generator import create_promo_message, MessageGenerator
@@ -16,6 +20,46 @@ from .telegram_bot import send_promo_message_sync, check_bot_config_sync
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "promo-bones-secret-key-change-later")
+
+
+def _auth_required_response():
+    return Response(
+        "Autenticação necessária",
+        401,
+        {"WWW-Authenticate": 'Basic realm="Promo Bonés Admin"'},
+    )
+
+
+def _check_basic_auth():
+    """Verifica as credenciais do header Authorization."""
+    auth = request.headers.get("Authorization")
+    if not auth or not auth.startswith("Basic "):
+        return _auth_required_response()
+    try:
+        decoded = base64.b64decode(auth[6:]).decode("utf-8")
+        username, password = decoded.split(":", 1)
+    except Exception:
+        return _auth_required_response()
+    if username != ADMIN_USERNAME or password != ADMIN_PASSWORD:
+        return _auth_required_response()
+    return None
+
+
+@app.before_request
+def require_auth():
+    """Protege o painel admin com HTTP Basic Auth.
+
+    Deixa público apenas /api/health (keep-alive) e arquivos estáticos.
+    """
+    if request.endpoint == "api_health" or request.path.startswith("/static/"):
+        return None
+    # Autenticação desabilitada quando ADMIN_USERNAME não está configurado.
+    if not ADMIN_USERNAME:
+        return None
+    if not ADMIN_PASSWORD:
+        # Credenciais incompletas: bloqueia o acesso ao painel.
+        return _auth_required_response()
+    return _check_basic_auth()
 
 # Helper to get DB session per request
 def get_db_session():

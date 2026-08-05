@@ -64,7 +64,11 @@ O projeto já está configurado para deploy no [Render](https://render.com) usan
    - `TELEGRAM_GROUP_ID` — ID do grupo/canal do Telegram
    - `ML_AFFILIATE_TAG` — (opcional) tag de afiliado do Mercado Livre
    - `AMAZON_AFFILIATE_TAG` — (opcional) tag de afiliado da Amazon
+   - `ADMIN_USERNAME` — usuário do painel admin (ex: `admin`)
+   - `ADMIN_PASSWORD` — senha forte do painel admin
 6. Clique em **Deploy**.
+
+> 🔒 **Segurança:** o painel admin é protegido por HTTP Basic Auth. Sem essas variáveis configuradas, o acesso ao painel será bloqueado. O endpoint `/api/health` permanece público para o keep-alive.
 
 Após o deploy, acesse a URL gerada pelo Render. O banco SQLite será criado automaticamente no primeiro acesso.
 
