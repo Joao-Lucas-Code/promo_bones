@@ -296,9 +296,13 @@ class MercadoLivreScraper(BaseScraper):
         return products
 
     def _fetch_api(self) -> dict | None:
-        """Busca produtos na API pública do Mercado Livre."""
+        """Busca produtos na API pública do Mercado Livre.
+
+        Usa curl_cffi quando disponível para simular um navegador real e
+        reduzir bloqueios por datacenter/cloud.
+        """
         params = {
-            "q": "boné aba curva",
+            "q": self.site_config.get("api_query", "boné aba curva"),
             "sort": "price_asc",
             "limit": 50,
         }
@@ -308,12 +312,9 @@ class MercadoLivreScraper(BaseScraper):
             params["nickname"] = seller
 
         try:
-            proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else None
-            resp = requests.get(
+            resp = self.session.get(
                 self.API_BASE,
                 params=params,
-                headers=HEADERS,
-                proxies=proxies,
                 timeout=REQUEST_TIMEOUT,
             )
             resp.raise_for_status()
