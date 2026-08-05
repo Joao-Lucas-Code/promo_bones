@@ -1,4 +1,5 @@
 """Web scraper para sites de bonés."""
+import json
 import os
 import re
 from datetime import datetime
@@ -91,58 +92,77 @@ class BaseScraper:
 
 
 class DustCompanyScraper(BaseScraper):
-    """Scraper para The Dust Company."""
+    """Scraper para The Dust Company (Shoppub)."""
+
+    def _parse_price_from_text(self, text: str) -> float | None:
+        if not text:
+            return None
+        text = text.replace("R$", "").replace(".", "").replace(",", ".").strip()
+        nums = re.findall(r"[\d.]+", text)
+        if nums:
+            try:
+                return float(nums[0])
+            except ValueError:
+                pass
+        return None
 
     def parse_products(self, soup: BeautifulSoup) -> list[dict]:
         products = []
-        # Selectores comuns de e-commerce Shopify/WooCommerce
-        items = soup.select(".product-item, .grid__item, .product-card, .product")
-        if not items:
-            # Tenta selectores mais genéricos
-            items = soup.find_all("div", class_=lambda c: c and ("product" in c.lower() or "item" in c.lower()))
+        # A Dust usa .product-item dentro de <li>
+        items = soup.select("li.product-item, .product-item")
 
         for item in items[:20]:
-            name_el = item.select_one(".product-title, .product-name, h2, h3, a[title]")
-            price_el = item.select_one(".price, .product-price, .money, .current-price")
-            old_price_el = item.select_one(".compare-price, .old-price, .was-price")
-            img_el = item.select_one("img")
-            link_el = item.select_one("a[href]")
-
-            if not name_el or not price_el:
+            name_el = item.select_one(".product-item__content--figcaption-name, .product-title, .product-name, h2, h3")
+            if not name_el:
                 continue
 
             name = name_el.get_text(strip=True)
-            price_text = price_el.get_text(strip=True)
-            price = self._parse_price(price_text)
 
-            old_price = None
+            # Preço atual: pix/à vista (.in-cash) ou atributo data-preco-por
+            current_price = None
+            cash_el = item.select_one(".in-cash")
+            if cash_el:
+                current_price = self._parse_price_from_text(cash_el.get_text(strip=True))
+            if current_price is None:
+                widget = item.select_one(".widget-area[data-preco-por]")
+                if widget:
+                    current_price = self._parse_price_from_text(widget.get("data-preco-por"))
+
+            # Preço original: .price-of ou atributo data-preco-de
+            original_price = None
+            old_price_el = item.select_one(".price-of")
             if old_price_el:
-                old_price = self._parse_price(old_price_el.get_text(strip=True))
+                original_price = self._parse_price_from_text(old_price_el.get_text(strip=True))
+            if original_price is None:
+                widget = item.select_one(".widget-area[data-preco-de]")
+                if widget:
+                    original_price = self._parse_price_from_text(widget.get("data-preco-de"))
 
             discount = None
-            if old_price and price and old_price > price:
-                discount = round((old_price - price) / old_price * 100, 1)
+            if original_price and current_price and original_price > current_price:
+                discount = round((original_price - current_price) / original_price * 100, 1)
 
+            img_el = item.select_one("img")
             image = None
             if img_el:
                 image = img_el.get("data-src") or img_el.get("src")
                 if image and image.startswith("//"):
                     image = "https:" + image
 
-            link = None
-            if link_el:
-                link = urljoin(self.site_config["base_url"], link_el["href"])
+            link_el = item.select_one("a[href]")
+            link = urljoin(self.site_config["base_url"], link_el["href"]) if link_el else None
 
-            products.append({
-                "name": name,
-                "current_price": price,
-                "original_price": old_price,
-                "discount_percent": discount,
-                "image_url": image,
-                "url": link,
-                "sku": None,
-                "tags": "aba-nene,dust",
-            })
+            if current_price:
+                products.append({
+                    "name": name,
+                    "current_price": current_price,
+                    "original_price": original_price,
+                    "discount_percent": discount,
+                    "image_url": image,
+                    "url": link,
+                    "sku": None,
+                    "tags": "aba-nene,dust",
+                })
 
         return products
 
@@ -154,8 +174,14 @@ class DustCompanyScraper(BaseScraper):
         products = self.parse_products(soup)
         return {"success": True, "products": products, "error": None}
 
+
+class MidasTouchScraper(BaseScraper):
+    """Scraper para Midas Touch (Nuvem Shop)."""
+
     @staticmethod
     def _parse_price(text: str) -> float | None:
+        if not text:
+            return None
         text = text.replace("R$", "").replace(".", "").replace(",", ".").strip()
         nums = re.findall(r"[\d.]+", text)
         if nums:
@@ -164,10 +190,6 @@ class DustCompanyScraper(BaseScraper):
             except ValueError:
                 pass
         return None
-
-
-class MidasTouchScraper(DustCompanyScraper):
-    """Scraper para Midas Touch (Nuvem Shop)."""
 
     def parse_products(self, soup: BeautifulSoup) -> list[dict]:
         products = []
@@ -188,6 +210,25 @@ class MidasTouchScraper(DustCompanyScraper):
             price = self._parse_price(price_el.get_text(strip=True))
             old_price = self._parse_price(old_price_el.get_text(strip=True)) if old_price_el else None
 
+            # Nuvem Shop guarda preço promocional e compare no JSON data-variants
+            container = item.select_one(".js-product-container[data-variants]")
+            if container:
+                try:
+                    variants = json.loads(container["data-variants"])
+                    if variants:
+                        variant = variants[0]
+                        if price is None and variant.get("price_number"):
+                            price = float(variant["price_number"])
+                        if old_price is None and variant.get("compare_at_price_number"):
+                            old_price = float(variant["compare_at_price_number"])
+                        # Se a variante indica preço promocional, garante que temos o compare
+                        if variant.get("has_promotional_price") and not old_price:
+                            # Fallback: preço sem desconto quando disponível
+                            if variant.get("price_without_taxes"):
+                                old_price = self._parse_price(variant["price_without_taxes"])
+                except Exception as e:
+                    print(f"[MIDAS] Erro ao ler data-variants: {e}")
+
             discount = None
             if old_price and price and old_price > price:
                 discount = round((old_price - price) / old_price * 100, 1)
@@ -207,16 +248,17 @@ class MidasTouchScraper(DustCompanyScraper):
             if link_el:
                 link = urljoin(self.site_config["base_url"], link_el["href"])
 
-            products.append({
-                "name": name,
-                "current_price": price,
-                "original_price": old_price,
-                "discount_percent": discount,
-                "image_url": image,
-                "url": link,
-                "sku": None,
-                "tags": "aba-nene,midas",
-            })
+            if price:
+                products.append({
+                    "name": name,
+                    "current_price": price,
+                    "original_price": old_price,
+                    "discount_percent": discount,
+                    "image_url": image,
+                    "url": link,
+                    "sku": None,
+                    "tags": "aba-nene,midas",
+                })
 
         return products
 
@@ -229,8 +271,78 @@ class MidasTouchScraper(DustCompanyScraper):
         return {"success": True, "products": products, "error": None}
 
 
-class SoleilScraper(DustCompanyScraper):
+class SoleilScraper(BaseScraper):
     """Scraper para Soleil Passionnés (Shopify)."""
+
+    @staticmethod
+    def _parse_price(text: str) -> float | None:
+        if not text:
+            return None
+        text = text.replace("R$", "").replace(".", "").replace(",", ".").strip()
+        nums = re.findall(r"[\d.]+", text)
+        if nums:
+            try:
+                return float(nums[0])
+            except ValueError:
+                pass
+        return None
+
+    def parse_products(self, soup: BeautifulSoup) -> list[dict]:
+        products = []
+        # Shopify: .card é o container de cada produto
+        items = soup.select(".card")
+
+        for item in items[:20]:
+            name_el = item.select_one(".card__heading a, .card__heading")
+            if not name_el:
+                continue
+
+            name = name_el.get_text(strip=True)
+
+            # Preço promocional (atual)
+            current_price = None
+            sale_el = item.select_one(".price-item--sale")
+            if sale_el:
+                current_price = self._parse_price(sale_el.get_text(strip=True))
+
+            # Preço regular/original
+            original_price = None
+            regular_el = item.select_one(".price-item--regular")
+            if regular_el:
+                original_price = self._parse_price(regular_el.get_text(strip=True))
+
+            # Se não tiver preço de sale, usa o regular como atual
+            if current_price is None:
+                current_price = original_price
+                original_price = None
+
+            discount = None
+            if original_price and current_price and original_price > current_price:
+                discount = round((original_price - current_price) / original_price * 100, 1)
+
+            img_el = item.select_one("img")
+            image = None
+            if img_el:
+                image = img_el.get("data-src") or img_el.get("src")
+                if image and image.startswith("//"):
+                    image = "https:" + image
+
+            link_el = item.select_one(".card__heading a[href]")
+            link = urljoin(self.site_config["base_url"], link_el["href"]) if link_el else None
+
+            if current_price:
+                products.append({
+                    "name": name,
+                    "current_price": current_price,
+                    "original_price": original_price,
+                    "discount_percent": discount,
+                    "image_url": image,
+                    "url": link,
+                    "sku": None,
+                    "tags": "aba-nene,soleil",
+                })
+
+        return products
 
     def run(self) -> dict:
         url = self.site_config["base_url"] + self.site_config.get("category_url", "")
@@ -238,8 +350,6 @@ class SoleilScraper(DustCompanyScraper):
         if not soup:
             return {"success": False, "products": [], "error": "Falha ao carregar página"}
         products = self.parse_products(soup)
-        for p in products:
-            p["tags"] = "aba-nene,soleil"
         return {"success": True, "products": products, "error": None}
 
 
