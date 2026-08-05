@@ -38,9 +38,13 @@ SITES = {
         "enabled": True,
     },
     "mercadolivre": {
-        "name": "Mercado Livre - The Dust Company",
+        "name": "Mercado Livre",
         "base_url": "https://lista.mercadolivre.com.br",
-        "search_url": "/loja/the-dust-company/_Container_ESP-EE01090EC0444C229575E36FBC148FE81031939350-Bonés",
+        # URL de fallback para scraping HTML (usada caso a API pública seja bloqueada)
+        "search_url": "/bon%C3%A9-aba-curva",
+        # Configurações da API pública do Mercado Livre
+        "api_query": "boné aba curva",
+        # "seller_nickname": "THE-DUST-COMPANY",  # descomente para filtrar por loja específica
         "enabled": True,
     },
 }

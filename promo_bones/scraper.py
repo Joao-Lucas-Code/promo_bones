@@ -246,11 +246,81 @@ class SoleilScraper(DustCompanyScraper):
 class MercadoLivreScraper(BaseScraper):
     """Scraper para Mercado Livre.
 
-    Atenção: o Mercado Livre costuma bloquear requisições vindas de
-    datacenters/cloud (página de verificação de conta ou micro-landing).
-    Quando isso acontece, o scraper retorna um erro informativo e o painel
-    pode usar o preço de referência do marketplace cadastrado manualmente.
+    Tenta primeiro a API pública do Mercado Livre, que é mais estável e
+    entrega preços originais/descontos de forma estruturada. Se a API for
+    bloqueada (datacenter/cloud), faz fallback para scraping da página HTML.
     """
+
+    API_BASE = "https://api.mercadolibre.com/sites/MLB/search"
+
+    def _is_cap_hat(self, title: str) -> bool:
+        """Filtra apenas bonés aba curva/nenê/dad hat/strapback."""
+        name_lower = title.lower()
+        keywords = ["boné", "bone", "aba curva", "dad hat", "strapback", "snapback"]
+        return any(k in name_lower for k in keywords)
+
+    def _parse_api_products(self, data: dict) -> list[dict]:
+        products = []
+        for item in data.get("results", [])[:20]:
+            title = item.get("title", "").strip()
+            if not title or not self._is_cap_hat(title):
+                continue
+
+            price = item.get("price")
+            original_price = item.get("original_price")
+
+            # Preço original pode estar nos atributos de preço
+            if original_price is None and item.get("prices"):
+                prices = item.get("prices", {}).get("prices", [])
+                if prices:
+                    # Pega o maior preço encontrado como referência
+                    original_price = max(
+                        (p.get("amount") for p in prices if p.get("amount")),
+                        default=None,
+                    )
+
+            discount = None
+            if original_price and price and original_price > price:
+                discount = round((original_price - price) / original_price * 100, 1)
+
+            products.append({
+                "name": title,
+                "current_price": price,
+                "original_price": original_price,
+                "discount_percent": discount,
+                "image_url": item.get("thumbnail"),
+                "url": item.get("permalink"),
+                "sku": item.get("id"),
+                "tags": "aba-nene,mercado-livre",
+            })
+        return products
+
+    def _fetch_api(self) -> dict | None:
+        """Busca produtos na API pública do Mercado Livre."""
+        params = {
+            "q": "boné aba curva",
+            "sort": "price_asc",
+            "limit": 50,
+        }
+        # Se houver seller configurado, filtra por loja oficial
+        seller = self.site_config.get("seller_id") or self.site_config.get("seller_nickname")
+        if seller:
+            params["nickname"] = seller
+
+        try:
+            proxies = {"http": PROXY_URL, "https": PROXY_URL} if PROXY_URL else None
+            resp = requests.get(
+                self.API_BASE,
+                params=params,
+                headers=HEADERS,
+                proxies=proxies,
+                timeout=REQUEST_TIMEOUT,
+            )
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            print(f"[ML API] Falha: {e}")
+            return None
 
     def parse_products(self, soup: BeautifulSoup) -> list[dict]:
         products = []
@@ -280,8 +350,8 @@ class MercadoLivreScraper(BaseScraper):
                 continue
 
             name = name_el.get_text(strip=True)
-            price = self._parse_price(price_el.get_text(strip=True) if price_el else "")
-            old_price = self._parse_price(old_price_el.get_text(strip=True) if old_price_el else "")
+            price = self._parse_html_price(price_el.get_text(strip=True) if price_el else "")
+            old_price = self._parse_html_price(old_price_el.get_text(strip=True) if old_price_el else "")
 
             discount = None
             if old_price and price and old_price > price:
@@ -293,9 +363,7 @@ class MercadoLivreScraper(BaseScraper):
 
             link = link_el["href"] if link_el else None
 
-            # Filtro: só bonés aba curva/nenê
-            name_lower = name.lower()
-            if any(k in name_lower for k in ["bone", "boné", "aba curva", "dad hat", "strapback"]):
+            if self._is_cap_hat(name):
                 products.append({
                     "name": name,
                     "current_price": price,
@@ -310,8 +378,22 @@ class MercadoLivreScraper(BaseScraper):
         return products
 
     def run(self) -> dict:
+        # 1) Tenta API primeiro
+        api_data = self._fetch_api()
+        if api_data is not None:
+            products = self._parse_api_products(api_data)
+            if products:
+                return {"success": True, "products": products, "error": None}
+            # API respondeu, mas não achou bonés; não faz fallback para HTML
+            return {
+                "success": False,
+                "products": [],
+                "error": "API do Mercado Livre não retornou bonés com os filtros atuais.",
+            }
+
+        # 2) Fallback para HTML scraping
+        print("[ML] API indisponível, tentando scraping HTML...")
         search_url = self.site_config.get("search_url", "")
-        # Adiciona ordenação por preço apenas se a URL ainda não tiver ordenação definida
         if "_OrderId" not in search_url:
             search_url += "_OrderId_PRICE_NoIndex_True"
         url = f"{self.site_config['base_url']}{search_url}"
@@ -343,7 +425,7 @@ class MercadoLivreScraper(BaseScraper):
         return {"success": True, "products": products, "error": None}
 
     @staticmethod
-    def _parse_price(text: str) -> float | None:
+    def _parse_html_price(text: str) -> float | None:
         text = text.replace("R$", "").replace(".", "").replace(",", ".").strip()
         nums = re.findall(r"[\d.]+", text)
         if nums:
